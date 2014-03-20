@@ -141,15 +141,16 @@ HODIGIAnalyzer::HODIGIAnalyzer(const edm::ParameterSet& iConfig) :
 	histos_["n_hodigis"] = theFileService->make<TH1F> ("n_hodigis", "n_hodigis", 50000, 0., 50000.);
 	histos_["n_crossedHOIds"] = theFileService->make<TH1F> ("n_crossedHOIds", "n_crossedHOIds", 11, -0.5, 10.5);
 	
-	histos_["hodigi_fC_onechannel"] = theFileService->make<TH1F> ("hodigi_fC_onechannel", "hodigi_fC_onechannel", 100, 0., 100.);
+	histos_["tenTS_fC_onechannel"] = theFileService->make<TH1F> ("tenTS_fC_onechannel", "tenTS_fC_onechannel", 100, 0., 100.);
 	histos_["tempindex_onechannel"] = theFileService->make<TH1F> ("tempindex_onechannel", "tempindex_onechannel", 11, -0.5, 9.5);
 	histos_["peak_fC_onechannel"] = theFileService->make<TH1F> ("peak_fC_onechannel", "peak_fC_onechannel", 50, 0., 50.);
-	histos_["alternative_fC_onechannel"] = theFileService->make<TH1F> ("alternative_fC_onechannel", "alternative_fC_onechannel", 100, 0., 100.);
+	histos_["fourTS_fC_onechannel"] = theFileService->make<TH1F> ("fourTS_fC_onechannel", "fourTS_fC_onechannel", 100, 0., 100.);
 
-	histos_["hodigi_fC_muonchannel"] = theFileService->make<TH1F> ("hodigi_fC_muonchannel", "hodigi_fC_muonchannel", 500, 0., 500.);
+	histos_["tenTS_fC_muonchannel"] = theFileService->make<TH1F> ("tenTS_fC_muonchannel", "tenTS_fC_muonchannel", 500, 0., 500.);
 	histos_["tempindex_muonchannel"] = theFileService->make<TH1F> ("tempindex_muonchannel", "tempindex_muonchannel", 11, -0.5, 9.5);
 	histos_["peak_fC_muonchannel"] = theFileService->make<TH1F> ("peak_fC_muonchannel", "peak_fC_muonchannel", 50, 0., 50.);
-	histos_["alternative_fC_muonchannel"] = theFileService->make<TH1F> ("alternative_fC_muonchannel", "alternative_fC_muonchannel", 500, 0., 500.);
+	histos_["fourTS_fC_muonchannel_etaminus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaminus", "fourTS_fC_muonchannel_etaminus", 500, 0., 500.);
+	histos_["fourTS_fC_muonchannel_etaplus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaplus", "fourTS_fC_muonchannel_etaplus", 500, 0., 500.);
 	
 	histos_["index_vs_nomfc_onechannel"] = theFileService->make<TH2F> ("index_vs_nomfc_onechannel", "index_vs_nomfc_onechannel", 11, -0.5, 10.5, 100, 0., 100.);
 	histos_["index_vs_nomfc_muonchannel"] = theFileService->make<TH2F> ("index_vs_nomfc_muonchannel", "index_vs_nomfc_muonchannel", 11, -0.5, 10.5,100, 00., 100.);
@@ -215,20 +216,20 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	histos_["n_hodigis"]->Fill(hodigis->size());
 
 	HODataFrameCollection::const_iterator it1;
-	
+
 	for (it1 = hodigis->begin(); it1 != hodigis->end(); ++it1) {// loop over all HODataFrames
 		HcalDetId digiID(it1->id());
 
 		if (digiID.rawId() == tempID1){ //go on if digiID = desired ID
-			double nomfc_onechannel = 0;
+			double tenTSfc_onechannel = 0;
 			double tempfc_onechannel = 0.;
 			int tempindex_onechannel = 0;
-			double alternativefC_onechannel = 0.;
+			double fourTSfC_onechannel = 0.;
 			
 			//plot the nominal fC
 			for (int ii = 0; ii < (*it1).size(); ++ii) {
 				histos_["index_vs_nomfc_onechannel"]->Fill(ii,(*it1)[ii].nominal_fC());
-				nomfc_onechannel += (*it1)[ii].nominal_fC();
+				tenTSfc_onechannel += (*it1)[ii].nominal_fC();
 				if (tempfc_onechannel < (*it1)[ii].nominal_fC()){
 					tempindex_onechannel = ii;
 					tempfc_onechannel = (*it1)[ii].nominal_fC();
@@ -236,14 +237,14 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 			}
 			
 			if(tempindex_onechannel > 0 && tempindex_onechannel <= 7){
-				alternativefC_onechannel = (*it1)[tempindex_onechannel-1].nominal_fC()+(*it1)[tempindex_onechannel].nominal_fC()+
+				fourTSfC_onechannel = (*it1)[tempindex_onechannel-1].nominal_fC()+(*it1)[tempindex_onechannel].nominal_fC()+
 						(*it1)[tempindex_onechannel+1].nominal_fC()+(*it1)[tempindex_onechannel+2].nominal_fC();
-			} else alternativefC_onechannel = (*it1)[3].nominal_fC()+(*it1)[4].nominal_fC()+(*it1)[5].nominal_fC()+(*it1)[6].nominal_fC();
+			} else fourTSfC_onechannel = (*it1)[3].nominal_fC()+(*it1)[4].nominal_fC()+(*it1)[5].nominal_fC()+(*it1)[6].nominal_fC();
 				
 			histos_["tempindex_onechannel"]->Fill(tempindex_onechannel);
 			histos_["peak_fC_onechannel"]->Fill(tempfc_onechannel);
-			histos_["hodigi_fC_onechannel"]->Fill(nomfc_onechannel);
-			histos_["alternative_fC_onechannel"]->Fill(alternativefC_onechannel);
+			histos_["tenTS_fC_onechannel"]->Fill(tenTSfc_onechannel);
+			histos_["fourTS_fC_onechannel"]->Fill(fourTSfC_onechannel);
 		}
 	}
 	//std::cout << "xxxxxxxxxxxxxxxxxxx" << std::endl;
@@ -298,15 +299,15 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 						HcalDetId mId(aid->rawId());
 
 						if (mId == cell) { // do something when the crossedId is the same as the Id of the current digi
-							double nomfc_muonchannel = 0;
+							double tenTSfc_muonchannel = 0;
 							double tempfc_muonchannel = 0.;
 							int tempindex_muonchannel = 0;
-							double alternativefC_muonchannel = 0.;
+							double fourTSfC_muonchannel = 0.;
 							
 							//plot the nominal fC
 							for (int ii = 0; ii < (*it2).size(); ++ii) {
 								histos_["index_vs_nomfc_muonchannel"]->Fill(ii,(*it2)[ii].nominal_fC());
-								nomfc_muonchannel += (*it2)[ii].nominal_fC();
+								tenTSfc_muonchannel += (*it2)[ii].nominal_fC();
 								if (tempfc_muonchannel < (*it2)[ii].nominal_fC()){
 									tempindex_muonchannel = ii;
 									tempfc_muonchannel = (*it2)[ii].nominal_fC();
@@ -314,14 +315,17 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 							}
 							
 							if(tempindex_muonchannel > 0 && tempindex_muonchannel <= 7){
-								alternativefC_muonchannel = (*it2)[tempindex_muonchannel-1].nominal_fC()+(*it2)[tempindex_muonchannel].nominal_fC()+
+								fourTSfC_muonchannel = (*it2)[tempindex_muonchannel-1].nominal_fC()+(*it2)[tempindex_muonchannel].nominal_fC()+
 										(*it2)[tempindex_muonchannel+1].nominal_fC()+(*it2)[tempindex_muonchannel+2].nominal_fC();
-							} else alternativefC_muonchannel = (*it2)[3].nominal_fC()+(*it2)[4].nominal_fC()+(*it2)[5].nominal_fC()+(*it2)[6].nominal_fC();
+							} else fourTSfC_muonchannel = (*it2)[3].nominal_fC()+(*it2)[4].nominal_fC()+(*it2)[5].nominal_fC()+(*it2)[6].nominal_fC();
 								
+							if (mId.ieta() < -4){
+								histos_["fourTS_fC_muonchannel_etaminus"]->Fill(fourTSfC_muonchannel);
+							} else histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel);
+
 							histos_["tempindex_muonchannel"]->Fill(tempindex_muonchannel);
 							histos_["peak_fC_muonchannel"]->Fill(tempfc_muonchannel);
-							histos_["hodigi_fC_muonchannel"]->Fill(nomfc_muonchannel);
-							histos_["alternative_fC_muonchannel"]->Fill(alternativefC_muonchannel);
+							histos_["tenTS_fC_muonchannel"]->Fill(tenTSfc_muonchannel);
 						}
 					}
 				}

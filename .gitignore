@@ -1,0 +1,6 @@
+*.pyc
+*.root
+.cproject
+.gitignore
+.project
+.settings
