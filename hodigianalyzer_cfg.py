@@ -5,7 +5,7 @@ import FWCore.ParameterSet.Types as CfgTypes
 process = cms.Process("Demo")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
-process.MessageLogger.cerr.FwkReport.reportEvery = 100
+process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 #HBHE event-level noise filtering
 process.load('CommonTools/RecoAlgos/HBHENoiseFilter_cfi')
