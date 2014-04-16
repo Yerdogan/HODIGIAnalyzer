@@ -228,7 +228,7 @@ Int_t langaupro(Double_t *params, Double_t &maxx, Double_t &FWHM) {
 }
 
 void langaus() {
-   TH1F *hist_to_fit = (TH1F*)_file0->Get("demo/fourTS_fC_onechannel_muonchannel");
+   TH1F *hist_to_fit = (TH1F*)_file0->Get("demo/fourTS_fC_muonchannel_etaplus");
 
    // Fitting SNR histo
    printf("Fitting...\n");
@@ -240,8 +240,8 @@ void langaus() {
    fr[1]=500.;
 
    pllo[0]=0.; pllo[1]=0.; pllo[2]=0.; pllo[3]=0.;
-   plhi[0]=50.; plhi[1]=300.; plhi[2]=6000.; plhi[3]=50.;
-   sv[0]=5.; sv[1]=100.; sv[2]=3000.; sv[3]=10.;
+   plhi[0]=50.; plhi[1]=300.; plhi[2]=1500000.; plhi[3]=50.;
+   sv[0]=5.; sv[1]=100.; sv[2]=10000.; sv[3]=10.;
 
    Double_t chisqr;
    Int_t    ndf;

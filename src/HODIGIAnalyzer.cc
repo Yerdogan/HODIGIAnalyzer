@@ -69,6 +69,7 @@
 #include "TrackingTools/TrackAssociator/interface/TrackDetectorAssociator.h"
 #include "TrackingTools/TrackAssociator/interface/TrackDetMatchInfo.h"
 
+#include "TF1.h"
 #include "TH2F.h"
 #include "TGraph.h"
 
@@ -84,7 +85,7 @@ public:
 	static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
 private:
-	reco::Vertex getvertex(const edm::Event&);
+	//reco::Vertex getvertex(const edm::Event&);
 	//void getCalibHODigis(const edm::EventSetup&, HcalDetId, edm::SortedCollection<HODataFrame>::const_iterator, CaloSamples);
 	virtual void beginJob();
 	virtual void analyze(const edm::Event&, const edm::EventSetup&);
@@ -119,8 +120,8 @@ private:
 
 typedef edm::SortedCollection < HODataFrame > HODataFrameCollection;
 
-edm::InputTag beamspotLabel_;
-edm::InputTag primvertexLabel_;
+//edm::InputTag beamspotLabel_;
+//edm::InputTag primvertexLabel_;
 
 //
 // static data member definitions
@@ -139,7 +140,7 @@ HODIGIAnalyzer::HODIGIAnalyzer(const edm::ParameterSet& iConfig) :
 
 	assocParams = iConfig.getParameter<edm::ParameterSet> ("TrackAssociatorParameters");
 	//beamspotLabel_ = iConfig.getParameter<edm::InputTag> ("beamSpot");
-	//primvertexLabel_ = iConfig.getParameter<edm::InputTag> ("primaryVertex");
+//	primvertexLabel_ = iConfig.getParameter<edm::InputTag> ("primaryVertex");
 
 	//histos_["nevent_alive_after_cut"] = theFileService->make<TH1F> ( "nevent_alive_after_cut", "nevent_alive_after_cut", 7, -0.5, 6.5);
 
@@ -149,24 +150,29 @@ HODIGIAnalyzer::HODIGIAnalyzer(const edm::ParameterSet& iConfig) :
 	histos_["n_crossedHOIds"] = theFileService->make<TH1F> ("n_crossedHOIds", "n_crossedHOIds", 11, -0.5, 10.5);
 	
 	histos_["tenTS_fC_onechannel"] = theFileService->make<TH1F> ("tenTS_fC_onechannel", "tenTS_fC_onechannel", 100, 0., 100.);
-	histos_["tempindex_onechannel"] = theFileService->make<TH1F> ("tempindex_onechannel", "tempindex_onechannel", 11, -0.5, 9.5);
+	histos_["tempindex_onechannel"] = theFileService->make<TH1I> ("tempindex_onechannel", "tempindex_onechannel", 10, 0, 10);
 	histos_["peak_fC_onechannel"] = theFileService->make<TH1F> ("peak_fC_onechannel", "peak_fC_onechannel", 50, 0., 50.);
 	histos_["fourTS_fC_onechannel"] = theFileService->make<TH1F> ("fourTS_fC_onechannel", "fourTS_fC_onechannel", 100, 0., 100.);
 
 	histos_["tenTS_fC_muonchannel"] = theFileService->make<TH1F> ("tenTS_fC_muonchannel", "tenTS_fC_muonchannel", 500, 0., 500.);
-	histos_["tempindex_muonchannel"] = theFileService->make<TH1F> ("tempindex_muonchannel", "tempindex_muonchannel", 11, -0.5, 9.5);
+	histos_["tempindex_muonchannel"] = theFileService->make<TH1I> ("tempindex_muonchannel", "tempindex_muonchannel", 10, 0, 10);
 	histos_["peak_fC_muonchannel"] = theFileService->make<TH1F> ("peak_fC_muonchannel", "peak_fC_muonchannel", 50, 0., 50.);
-	histos_["fourTS_fC_muonchannel_etaminus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaminus", "fourTS_fC_muonchannel_etaminus", 500, 0., 500.);
-	histos_["fourTS_fC_muonchannel_etaplus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaplus", "fourTS_fC_muonchannel_etaplus", 500, 0., 500.);
+	histos_["fourTS_fC_muonchannel_etaminus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaminus", "fourTS_fC_muonchannel_etaminus", 100, 0., 500.);
+	histos_["fourTS_fC_muonchannel_etaplus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaplus", "fourTS_fC_muonchannel_etaplus", 100, 0., 500.);
 	
-	histos_["index_vs_nomfc_onechannel"] = theFileService->make<TH2F> ("index_vs_nomfc_onechannel", "index_vs_nomfc_onechannel", 11, -0.5, 10.5, 100, 0., 100.);
-	histos_["index_vs_nomfc_muonchannel"] = theFileService->make<TH2F> ("index_vs_nomfc_muonchannel", "index_vs_nomfc_muonchannel", 11, -0.5, 10.5,100, 00., 100.);
+	histos_["index_vs_nomfc_onechannel"] = theFileService->make<TH1F> ("index_vs_nomfc_onechannel", "index_vs_nomfc_onechannel", 10, 0., 10.);
+	histos_["index_vs_nomfc_muonchannel"] = theFileService->make<TH1F> ("index_vs_nomfc_muonchannel", "index_vs_nomfc_muonchannel", 10, 0., 10.);
+
+	graphs_["muon_track_yz"] = theFileService->make<TGraph> ();
+	graphs_["muon_track_xy"] = theFileService->make<TGraph> ();
 
 	histos_["angle"] = theFileService->make<TH1F> ("angle", "angle", 100, -1.570795, 1.570795);
-	histos_["fourTS_fC_onechannel_muonchannel"] = theFileService->make<TH1F> ("fourTS_fC_onechannel_muonchannel", "fourTS_fC_onechannel_muonchannel", 500, 0., 500.);
+	histos_["fourTS_fC_onechannel_muonchannel"] = theFileService->make<TH1F> ("fourTS_fC_onechannel_muonchannel", "fourTS_fC_onechannel_muonchannel", 100, 0., 500.);
 
 	histos_["theID"] = theFileService->make<TH1F> ("theID", "theID", 10000, 1174470000, 1174480000);
 
+	histos_["cosmu_HOeta"] = theFileService->make<TH1F> ("cosmu_innereta", "cosmu_innereta", 120, -1.5, 1.5);
+	histos_["cosmu_HOphi"] = theFileService->make<TH1F> ("cosmu_outereta", "cosmu_outereta", 120, -1.5, 1.5);
 }
 
 HODIGIAnalyzer::~HODIGIAnalyzer() {
@@ -247,7 +253,7 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 			
 			//plot the nominal fC
 			for (int ii = 0; ii < (*it1).size(); ++ii) {
-				histos_["index_vs_nomfc_onechannel"]->Fill(ii,(*it1)[ii].nominal_fC());
+				histos_["index_vs_nomfc_onechannel"]->SetBinContent(ii,(*it1)[ii].nominal_fC());
 				tenTSfc_onechannel += (*it1)[ii].nominal_fC();
 				if (tempfc_onechannel < (*it1)[ii].nominal_fC()){
 					tempindex_onechannel = ii;
@@ -259,7 +265,7 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 				fourTSfC_onechannel = (*it1)[tempindex_onechannel-1].nominal_fC()+(*it1)[tempindex_onechannel].nominal_fC()+
 						(*it1)[tempindex_onechannel+1].nominal_fC()+(*it1)[tempindex_onechannel+2].nominal_fC();
 			} else fourTSfC_onechannel = (*it1)[3].nominal_fC()+(*it1)[4].nominal_fC()+(*it1)[5].nominal_fC()+(*it1)[6].nominal_fC();
-				
+
 			histos_["tempindex_onechannel"]->Fill(tempindex_onechannel);
 			histos_["peak_fC_onechannel"]->Fill(tempfc_onechannel);
 			histos_["tenTS_fC_onechannel"]->Fill(tenTSfc_onechannel);
@@ -271,26 +277,93 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	//if (muons->size() > 0) { // do this if at least one muon there
 	//	for (unsigned int i = 0; i < muons->size(); ++i) { //loop over all muons
 	if (cosmic_muons->size() > 0) { // do this if at least one muon there
-		for (unsigned int i = 0; i < cosmic_muons->size(); ++i) { //loop over all muons		
-			//std::cout << "xxxxxxx next muon xxxxxx" << std::endl;
+		for (unsigned int i = 0; i < cosmic_muons->size(); ++i) { //loop over all muons
 
-			//reco::Muon const * muon_iter = &(muons->at(i));
+	//		reco::Muon const * muon_iter = &(muons->at(i));
+
+	//		//analyze only tight muons
+	//		if (!muon::isTightMuon(*muon_iter, getvertex(iEvent))) return;
 			
-			//analyze only tight muons
-			//if (!muon::isTightMuon(*muon_iter, getvertex(iEvent))) return;
+	//		if (muon_iter->track().isNull()) continue;
+	//		reco::Track const * track = muon_iter->track().get();
 
-			//if (muon_iter->track().isNull()) continue;
-			//reco::Track const * track = muon_iter->track().get();
-
-			//TrackDetMatchInfo * muMatch = new TrackDetMatchInfo(assoc.associate(iEvent, iSetup, *track, assocParams));
+	//		TrackDetMatchInfo * muMatch = new TrackDetMatchInfo(assoc.associate(iEvent, iSetup, *track, assocParams));
 			TrackDetMatchInfo * muMatch = new TrackDetMatchInfo(assoc.associate(iEvent, iSetup, cosmic_muons->at(i), assocParams));
 
+			/*
+			double hophi = muMatch->trkGlobPosAtHO.Phi();
+			double hoeta = muMatch->trkGlobPosAtHO.Eta();
+
+			// muons in geom.accept of HO
+			//if (!theMuonHOAcceptance->inGeomAccept(hoeta2, hophi2, 0.04, 0.017)) inAccept = 0;
+			if (!theMuonHOAcceptance->inGeomAccept(hoeta, hophi, 0., 0.)) continue;
+			// muons in non dead cells of HO
+			//if (!theMuonHOAcceptance->inNotDeadGeom(hoeta2, hophi2, 0.04, 0.017)) inNotDead = 0;
+			if (!theMuonHOAcceptance->inNotDeadGeom(hoeta, hophi, 0., 0.)) continue;
+			// muons in SiPM tiles of HO
+			//if (!theMuonHOAcceptance->inSiPMGeom(hoeta2, hophi2, 0.04, 0.017)) inSiPM = 0;
+*/
 			histos_["n_crossedHOIds"]->Fill(muMatch->crossedHOIds.size());
+
+			int cosmu_HOieta = -999;
+			int cosmu_HOiphi = -999;
+
+			//alternative matching
+			if (cosmic_muons->at(i).innerOk() && cosmic_muons->at(i).outerOk()){
+
+				math::XYZPoint cosmu_innerpoint = cosmic_muons->at(i).innerPosition();
+				math::XYZPoint cosmu_outerpoint = cosmic_muons->at(i).outerPosition();
+
+				// inner = entrance, outer = exit
+				double cosmu_innerx = cosmu_innerpoint.x();
+				double cosmu_innery = cosmu_innerpoint.y();
+				double cosmu_innerz = cosmu_innerpoint.z();
+
+				double cosmu_outerx = cosmu_outerpoint.x();
+				double cosmu_outery = cosmu_outerpoint.y();
+				double cosmu_outerz = cosmu_outerpoint.z();
+
+				graphs_["muon_track_yz"]->SetPoint(0,cosmu_innerz,cosmu_innery);
+				graphs_["muon_track_yz"]->SetPoint(1,cosmu_outerz,cosmu_outery);
+
+				graphs_["muon_track_yz"]->Fit("pol1","q");
+
+				graphs_["muon_track_xy"]->SetPoint(0,cosmu_innerx,cosmu_innery);
+				graphs_["muon_track_xy"]->SetPoint(1,cosmu_outerx,cosmu_outery);
+
+				graphs_["muon_track_xy"]->Fit("pol1","q");
+
+				TF1 *fit_fuyz = new TF1();
+				fit_fuyz = graphs_["muon_track_yz"]->GetFunction("pol1");
+
+				TF1 *fit_fuxy = new TF1();
+				fit_fuxy = graphs_["muon_track_xy"]->GetFunction("pol1");
+
+				double HO_y = -99.;
+
+				if(cosmic_muons->at(i).momentum().y() < 0.){
+					HO_y = 407.;
+				} else HO_y = -407.;
+
+				double HO_z = fit_fuyz->GetX(HO_y,-800.,800.,1.E-10,100,false);
+				double HO_x = fit_fuxy->GetX(HO_y,-800.,800.,1.E-10,100,false);
+
+				GlobalPoint cosmu_HOpoint_yz(0.,HO_y,HO_z);
+				GlobalPoint cosmu_HOpoint_xy(HO_x,HO_y,0.);
+
+				//eta plane
+				cosmu_HOieta = int(cosmu_HOpoint_yz.eta()/0.087) + ((cosmu_HOpoint_yz.eta()>0) ? 1 : -1);
+
+				//phi plane
+				cosmu_HOiphi = int(cosmu_HOpoint_xy.phi()/0.087);
+			}
+
 
 			// if muon didn't cross any HO tile go on with the next muon
 			if (muMatch->crossedHOIds.size() == 0) continue;
 			
-			/*
+			// ----------------------------------------------------------------
+/*
 			//consider only muons without hits in CSC
 			int total = 0;
 			bool foundcsc = 0;
@@ -307,24 +380,27 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 			if (foundcsc || total == 0) continue;
 
-			*/
-
+			// ------------------------------------------------------------------
+*/
 			HODataFrameCollection::const_iterator it2;
 
-			for (std::vector<DetId>::const_iterator aid = muMatch->crossedHOIds.begin(); aid != muMatch->crossedHOIds.end(); ++aid) {// loop over all HOIds crossed by the muon
-				//std::cout << "xxxxxxxxxxxx next crossedID xxxxxxxxxxx" << std::endl;
-				HcalDetId mId(aid->rawId());
+			//for (std::vector<DetId>::const_iterator aid = muMatch->crossedHOIds.begin(); aid != muMatch->crossedHOIds.end(); ++aid) {// loop over all HOIds crossed by the muon
+				//HcalDetId mId(aid->rawId());
 
 				for (it2 = hodigis->begin(); it2 != hodigis->end(); ++it2) {
 					HcalDetId cell(it2->id());
 
-					if (mId == cell) { // do something when the crossedId is the same as the Id of the current digi
-
+					//if (cell.rawId() == mId.rawId()){
+					//if (cell.ieta() == mId.ieta() && cell.iphi() == mId.iphi()){
+					if (cell.ieta() == cosmu_HOieta && cell.iphi() == cosmu_HOiphi){
+						// do something when the crossedId is the same as the Id of the current digi
+						/*
 						histos_["theID"]->Fill(mId.rawId());
 
 						double angle_for_corr = 0.;
 						double theta = 30.;
 						const math::XYZVector& cosmic_mom = cosmic_muons->at(i).momentum();
+						//const math::XYZVector& cosmic_mom = muon_iter->momentum();
 						math::XYZVector normal_vec;
 
 						if(mId.iphi() >= 1 && mId.iphi() <= 6){
@@ -378,7 +454,7 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 						}
 
 						histos_["angle"]->Fill(angle_for_corr);
-
+*/
 						double tenTSfc_muonchannel = 0;
 						double tempfc_muonchannel = 0.;
 						int tempindex_muonchannel = 0;
@@ -386,7 +462,7 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 						//plot the nominal fC
 						for (int ii = 0; ii < (*it2).size(); ++ii) {
-							histos_["index_vs_nomfc_muonchannel"]->Fill(ii,(*it2)[ii].nominal_fC());
+							histos_["index_vs_nomfc_muonchannel"]->SetBinContent(ii,(*it2)[ii].nominal_fC());
 							tenTSfc_muonchannel += (*it2)[ii].nominal_fC();
 							if (tempfc_muonchannel < (*it2)[ii].nominal_fC()){
 								tempindex_muonchannel = ii;
@@ -401,29 +477,29 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 						} else fourTSfC_muonchannel = (*it2)[3].nominal_fC()+(*it2)[4].nominal_fC()+(*it2)[5].nominal_fC()+(*it2)[6].nominal_fC();
 
 						// plot negative wheels seperately
-						if (mId.ieta() < -4){
+						if (cosmu_HOieta < -4){
 							histos_["fourTS_fC_muonchannel_etaminus"]->Fill(fourTSfC_muonchannel);
-						} else {
+						} else histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel);
+
+						if (cosmu_HOieta == 10 || cosmu_HOieta == 11){
+							histos_["fourTS_fC_onechannel_muonchannel"]->Fill(fourTSfC_muonchannel);
+						}
+						/*else {
 							if(fourTSfC_muonchannel > 60.){
 								histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel*cos(angle_for_corr));
-							} //else histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel);
+							}
 
-							//std::cout << "mid_raw = " << mId.rawId() << std::endl;
-							//std::cout << "iphi = " << mId.iphi() << std::endl;
-							//std::cout << "ieta = " << mId.ieta() << std::endl;
-							//std::cout << "ccccccccccccccccccccccccccccccc" << std::endl;
-
-							if (mId.ieta() == 4 || mId.ieta() == 10 || mId.ieta() == 11){
+							if (cosmu_HOieta == 4 || cosmu_HOieta == 10 || cosmu_HOieta == 11){
 								histos_["fourTS_fC_onechannel_muonchannel"]->Fill(fourTSfC_muonchannel);
 							}
-						}
+						}*/
 
 						histos_["tempindex_muonchannel"]->Fill(tempindex_muonchannel);
 						histos_["peak_fC_muonchannel"]->Fill(tempfc_muonchannel);
 						histos_["tenTS_fC_muonchannel"]->Fill(tenTSfc_muonchannel);
 					}
 				}
-			}
+			//}
 		}
 	}
 
@@ -437,7 +513,7 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	iSetup.get<SetupRecord>().get(pSetup);
 #endif
 }
-
+/*
 reco::Vertex HODIGIAnalyzer::getvertex(const edm::Event& iEvent){
 	//-------------------------------Vertex information------------------------------------------------------
 	//-------------------------------------------------------------------------------------------------------
@@ -478,7 +554,7 @@ reco::Vertex HODIGIAnalyzer::getvertex(const edm::Event& iEvent){
 
 	return thePrimaryVertex;
 }
-
+*/
 // ------------ method called once each job just before starting event loop  ------------
 void HODIGIAnalyzer::beginJob() {
 }
