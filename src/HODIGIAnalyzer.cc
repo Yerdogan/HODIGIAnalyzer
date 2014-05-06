@@ -154,20 +154,31 @@ HODIGIAnalyzer::HODIGIAnalyzer(const edm::ParameterSet& iConfig) :
 	histos_["peak_fC_onechannel"] = theFileService->make<TH1F> ("peak_fC_onechannel", "peak_fC_onechannel", 50, 0., 50.);
 	histos_["fourTS_fC_onechannel"] = theFileService->make<TH1F> ("fourTS_fC_onechannel", "fourTS_fC_onechannel", 100, 0., 100.);
 
+	histos_["fourTSfC_muonchannel_exgrid"] = theFileService->make<TH1F> ("fourTSfC_muonchannel_exgrid", "fourTSfC_muonchannel_exgrid", 1000, 0., 1000.);
+
 	histos_["tenTS_fC_muonchannel"] = theFileService->make<TH1F> ("tenTS_fC_muonchannel", "tenTS_fC_muonchannel", 500, 0., 500.);
 	histos_["tempindex_muonchannel"] = theFileService->make<TH1I> ("tempindex_muonchannel", "tempindex_muonchannel", 10, 0, 10);
 	histos_["peak_fC_muonchannel"] = theFileService->make<TH1F> ("peak_fC_muonchannel", "peak_fC_muonchannel", 50, 0., 50.);
-	histos_["fourTS_fC_muonchannel_etaminus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaminus", "fourTS_fC_muonchannel_etaminus", 100, 0., 500.);
-	histos_["fourTS_fC_muonchannel_etaplus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaplus", "fourTS_fC_muonchannel_etaplus", 100, 0., 500.);
+
+	histos_["fourTS_fC_muonchannel_etaminus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaminus", "fourTS_fC_muonchannel_etaminus", 1000, 0., 1000.);
+	histos_["fourTS_fC_muonchannel_etaplus"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaplus", "fourTS_fC_muonchannel_etaplus", 1000, 0., 1000.);
+	histos_["fourTS_fC_onechannel_muonchannel"] = theFileService->make<TH1F> ("fourTS_fC_onechannel_muonchannel", "fourTS_fC_onechannel_muonchannel", 1000, 0., 1000.);
 	
+	histos_["fourTS_fC_muonchannel_60to1000"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_60to1000", "fourTS_fC_muonchannel_60to1000", 1000, 0., 1000.);
+
+	histos_["fourTS_fC_muonchannel_etaminus_grid"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaminus_grid", "fourTS_fC_muonchannel_etaminus_grid", 1000, 0., 1000.);
+	histos_["fourTS_fC_muonchannel_etaplus_grid"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaplus_grid", "fourTS_fC_muonchannel_etaplus_grid", 1000, 0., 1000.);
+	histos_["fourTS_fC_onechannel_muonchannel_grid"] = theFileService->make<TH1F> ("fourTS_fC_onechannel_muonchannel_grid", "fourTS_fC_onechannel_muonchannel_grid", 1000, 0., 1000.);
+
 	histos_["index_vs_nomfc_onechannel"] = theFileService->make<TH1F> ("index_vs_nomfc_onechannel", "index_vs_nomfc_onechannel", 10, 0., 10.);
 	histos_["index_vs_nomfc_muonchannel"] = theFileService->make<TH1F> ("index_vs_nomfc_muonchannel", "index_vs_nomfc_muonchannel", 10, 0., 10.);
+
+	histos_["index_vs_fourfc"] = theFileService->make<TH2F> ("index_vs_fourfc", "index_vs_fourfc", 10, 0., 10., 500, 0., 500.);
 
 	graphs_["muon_track_yz"] = theFileService->make<TGraph> ();
 	graphs_["muon_track_xy"] = theFileService->make<TGraph> ();
 
 	histos_["angle"] = theFileService->make<TH1F> ("angle", "angle", 100, -1.570795, 1.570795);
-	histos_["fourTS_fC_onechannel_muonchannel"] = theFileService->make<TH1F> ("fourTS_fC_onechannel_muonchannel", "fourTS_fC_onechannel_muonchannel", 100, 0., 500.);
 
 	histos_["theID"] = theFileService->make<TH1F> ("theID", "theID", 10000, 1174470000, 1174480000);
 
@@ -276,7 +287,7 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	
 	//if (muons->size() > 0) { // do this if at least one muon there
 	//	for (unsigned int i = 0; i < muons->size(); ++i) { //loop over all muons
-	if (cosmic_muons->size() > 0) { // do this if at least one muon there
+	if (cosmic_muons->size() == 1) { // do this if exactly one cosmic muon there
 		for (unsigned int i = 0; i < cosmic_muons->size(); ++i) { //loop over all muons
 
 	//		reco::Muon const * muon_iter = &(muons->at(i));
@@ -305,9 +316,10 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 */
 			histos_["n_crossedHOIds"]->Fill(muMatch->crossedHOIds.size());
 
-			int cosmu_HOieta = -999;
-			int cosmu_HOiphi = -999;
+			//int cosmu_HOieta = -999;
+			//int cosmu_HOiphi = -999;
 
+			/*
 			//alternative matching
 			if (cosmic_muons->at(i).innerOk() && cosmic_muons->at(i).outerOk()){
 
@@ -357,11 +369,11 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 				//phi plane
 				cosmu_HOiphi = int(cosmu_HOpoint_xy.phi()/0.087);
 			}
-
+*/
 
 			// if muon didn't cross any HO tile go on with the next muon
 			if (muMatch->crossedHOIds.size() == 0) continue;
-			
+
 			// ----------------------------------------------------------------
 /*
 			//consider only muons without hits in CSC
@@ -382,21 +394,33 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 			// ------------------------------------------------------------------
 */
+
+			int tile_ieta = -99.;
+
+			double fourTSfC_muonchannel = 0.;
+			double temp_fourTSfC_muonchannel = 0.;
+			int tempindex_muonchannel;
+			int index_muonchannel = -99.;
+
+			double fourTSfC_muonchannel_grid = 0.;
+			double fourTSfC_muonchannel_grid1 = 0.;
+			double temp_fourTSfC_muonchannel_grid = 0.;
+
+			double temp_fourTSfC_muonchannel_exgrid = 0.;
+
 			HODataFrameCollection::const_iterator it2;
 
-			//for (std::vector<DetId>::const_iterator aid = muMatch->crossedHOIds.begin(); aid != muMatch->crossedHOIds.end(); ++aid) {// loop over all HOIds crossed by the muon
-				//HcalDetId mId(aid->rawId());
+			for (std::vector<DetId>::const_iterator aid = muMatch->crossedHOIds.begin(); aid != muMatch->crossedHOIds.end(); ++aid) {// loop over all HOIds crossed by the muon
+				HcalDetId mId(aid->rawId());
 
 				for (it2 = hodigis->begin(); it2 != hodigis->end(); ++it2) {
 					HcalDetId cell(it2->id());
 
-					//if (cell.rawId() == mId.rawId()){
-					//if (cell.ieta() == mId.ieta() && cell.iphi() == mId.iphi()){
-					if (cell.ieta() == cosmu_HOieta && cell.iphi() == cosmu_HOiphi){
-						// do something when the crossedId is the same as the Id of the current digi
-						/*
+					if (cell.rawId() == mId.rawId()){ // do something when the crossedId is the same as the Id of the current digi
+
 						histos_["theID"]->Fill(mId.rawId());
 
+						/*
 						double angle_for_corr = 0.;
 						double theta = 30.;
 						const math::XYZVector& cosmic_mom = cosmic_muons->at(i).momentum();
@@ -455,15 +479,21 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 						histos_["angle"]->Fill(angle_for_corr);
 */
-						double tenTSfc_muonchannel = 0;
 						double tempfc_muonchannel = 0.;
-						int tempindex_muonchannel = 0;
-						double fourTSfC_muonchannel = 0.;
+						tempindex_muonchannel = 0;
+
+						double tempfc_muonchannel_grid = 0.;
+						int tempindex_muonchannel_grid = 0;
+
+						double tempfc_muonchannel_exgrid = 0.;
+						int tempindex_muonchannel_exgrid = 0;
+
+						int gridSize = 1;
+						int n_gridtiles = 2;
 
 						//plot the nominal fC
 						for (int ii = 0; ii < (*it2).size(); ++ii) {
 							histos_["index_vs_nomfc_muonchannel"]->SetBinContent(ii,(*it2)[ii].nominal_fC());
-							tenTSfc_muonchannel += (*it2)[ii].nominal_fC();
 							if (tempfc_muonchannel < (*it2)[ii].nominal_fC()){
 								tempindex_muonchannel = ii;
 								tempfc_muonchannel = (*it2)[ii].nominal_fC();
@@ -472,34 +502,98 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 
 						// integrate over 4 timeslices
 						if(tempindex_muonchannel > 0 && tempindex_muonchannel <= 7){
-							fourTSfC_muonchannel = (*it2)[tempindex_muonchannel-1].nominal_fC()+(*it2)[tempindex_muonchannel].nominal_fC()+
+							temp_fourTSfC_muonchannel = (*it2)[tempindex_muonchannel-1].nominal_fC()+(*it2)[tempindex_muonchannel].nominal_fC()+
 								(*it2)[tempindex_muonchannel+1].nominal_fC()+(*it2)[tempindex_muonchannel+2].nominal_fC();
-						} else fourTSfC_muonchannel = (*it2)[3].nominal_fC()+(*it2)[4].nominal_fC()+(*it2)[5].nominal_fC()+(*it2)[6].nominal_fC();
+						} else temp_fourTSfC_muonchannel = (*it2)[3].nominal_fC()+(*it2)[4].nominal_fC()+(*it2)[5].nominal_fC()+(*it2)[6].nominal_fC();
 
-						// plot negative wheels seperately
-						if (cosmu_HOieta < -4){
-							histos_["fourTS_fC_muonchannel_etaminus"]->Fill(fourTSfC_muonchannel);
-						} else histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel);
-
-						if (cosmu_HOieta == 10 || cosmu_HOieta == 11){
-							histos_["fourTS_fC_onechannel_muonchannel"]->Fill(fourTSfC_muonchannel);
+						if (temp_fourTSfC_muonchannel > fourTSfC_muonchannel) {
+							tile_ieta = mId.ieta();
+							fourTSfC_muonchannel = temp_fourTSfC_muonchannel;
+							index_muonchannel = tempindex_muonchannel;
 						}
-						/*else {
-							if(fourTSfC_muonchannel > 60.){
-								histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel*cos(angle_for_corr));
-							}
 
-							if (cosmu_HOieta == 4 || cosmu_HOieta == 10 || cosmu_HOieta == 11){
-								histos_["fourTS_fC_onechannel_muonchannel"]->Fill(fourTSfC_muonchannel);
-							}
-						}*/
+						//NxN (N=gridSize) neighborhood of the tile where the muon is expected to go through
+						HODataFrameCollection::const_iterator it3;
 
-						histos_["tempindex_muonchannel"]->Fill(tempindex_muonchannel);
-						histos_["peak_fC_muonchannel"]->Fill(tempfc_muonchannel);
-						histos_["tenTS_fC_muonchannel"]->Fill(tenTSfc_muonchannel);
+						for (it3 = hodigis->begin(); it3 != hodigis->end(); ++it3) {
+							HcalDetId neighborId(it3->id());
+							int dEta = abs( (mId.ieta()<0?mId.ieta()+1:mId.ieta() )
+											-(neighborId.ieta()<0?neighborId.ieta()+1:neighborId.ieta() ) ) ;
+							int dPhi = abs( mId.iphi()-neighborId.iphi() );
+							if (abs(72-dPhi) < dPhi) dPhi = 72-dPhi;
+
+							if(dEta <= gridSize && dPhi <= gridSize) {//within the grid
+								n_gridtiles++;
+								for (int iii = 0; iii < (*it3).size(); ++iii) {
+									if (tempfc_muonchannel_grid < (*it3)[iii].nominal_fC()){
+										tempindex_muonchannel_grid = iii;
+										tempfc_muonchannel_grid = (*it3)[iii].nominal_fC();
+									}
+								}
+
+								// integrate over 4 timeslices
+								if(tempindex_muonchannel_grid > 0 && tempindex_muonchannel_grid <= 7){
+									temp_fourTSfC_muonchannel_grid = (*it3)[tempindex_muonchannel_grid-1].nominal_fC()+(*it3)[tempindex_muonchannel_grid].nominal_fC()+
+										(*it3)[tempindex_muonchannel_grid+1].nominal_fC()+(*it3)[tempindex_muonchannel_grid+2].nominal_fC();
+								} else temp_fourTSfC_muonchannel_grid = (*it3)[3].nominal_fC()+(*it3)[4].nominal_fC()+(*it3)[5].nominal_fC()+(*it3)[6].nominal_fC();
+
+								if (temp_fourTSfC_muonchannel_grid > fourTSfC_muonchannel_grid) fourTSfC_muonchannel_grid = temp_fourTSfC_muonchannel_grid;
+
+							} else {//outside the grid
+								for (int iiii = 0; iiii < (*it3).size(); ++iiii) {
+									if (tempfc_muonchannel_exgrid < (*it3)[iiii].nominal_fC()){
+										tempindex_muonchannel_exgrid = iiii;
+										tempfc_muonchannel_exgrid = (*it3)[iiii].nominal_fC();
+									}
+								}
+
+								// integrate over 4 timeslices
+								if(tempindex_muonchannel_exgrid > 0 && tempindex_muonchannel_exgrid <= 7){
+									temp_fourTSfC_muonchannel_exgrid = (*it3)[tempindex_muonchannel_exgrid-1].nominal_fC()+(*it3)[tempindex_muonchannel_exgrid].nominal_fC()+
+										(*it3)[tempindex_muonchannel_exgrid+1].nominal_fC()+(*it3)[tempindex_muonchannel_exgrid+2].nominal_fC();
+								} else temp_fourTSfC_muonchannel_exgrid = (*it3)[3].nominal_fC()+(*it3)[4].nominal_fC()+(*it3)[5].nominal_fC()+(*it3)[6].nominal_fC();
+
+								histos_["fourTSfC_muonchannel_exgrid"]->Fill(temp_fourTSfC_muonchannel_exgrid);
+							}
+						}
+
+						if (fourTSfC_muonchannel_grid > fourTSfC_muonchannel_grid1) {
+							tile_ieta = mId.ieta();
+							fourTSfC_muonchannel_grid1 = fourTSfC_muonchannel_grid;
+						}
 					}
 				}
-			//}
+			}
+
+			if (tile_ieta < -4){
+				histos_["fourTS_fC_muonchannel_etaminus"]->Fill(fourTSfC_muonchannel);
+			} else {
+				histos_["index_vs_fourfc"]->Fill(index_muonchannel,fourTSfC_muonchannel);
+				histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel);
+			}
+
+			if (tile_ieta == 10 || tile_ieta == 11){
+				histos_["fourTS_fC_onechannel_muonchannel"]->Fill(fourTSfC_muonchannel);
+			}
+
+
+			// plot negative wheels seperately
+			if (tile_ieta < -4){
+				histos_["fourTS_fC_muonchannel_etaminus_grid"]->Fill(fourTSfC_muonchannel_grid1);
+			} else {
+				histos_["fourTS_fC_muonchannel_etaplus_grid"]->Fill(fourTSfC_muonchannel_grid1);
+
+				if(fourTSfC_muonchannel_grid1 >= 60.){
+					histos_["fourTS_fC_muonchannel_60to1000"]->Fill(fourTSfC_muonchannel-36.);
+				}
+			}
+
+			if (tile_ieta == 10 || tile_ieta == 11){
+				histos_["fourTS_fC_onechannel_muonchannel_grid"]->Fill(fourTSfC_muonchannel_grid1);
+			}
+
+			//histos_["tempindex_muonchannel"]->Fill(tempindex_muonchannel);
+			//histos_["peak_fC_muonchannel"]->Fill(tempfc_muonchannel);
 		}
 	}
 
@@ -555,6 +649,7 @@ reco::Vertex HODIGIAnalyzer::getvertex(const edm::Event& iEvent){
 	return thePrimaryVertex;
 }
 */
+
 // ------------ method called once each job just before starting event loop  ------------
 void HODIGIAnalyzer::beginJob() {
 }
