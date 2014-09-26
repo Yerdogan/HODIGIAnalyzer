@@ -1,0 +1,4 @@
+cmsRun hodigianalyzer_cfg1.py >& hodigianalyzer_cfg1.py_log
+cmsRun hodigianalyzer_cfg2.py >& hodigianalyzer_cfg2.py_log
+cmsRun hodigianalyzer_cfg3.py >& hodigianalyzer_cfg3.py_log
+cmsRun hodigianalyzer_cfg4.py >& hodigianalyzer_cfg4.py_log

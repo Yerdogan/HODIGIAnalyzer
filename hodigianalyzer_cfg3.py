@@ -21,7 +21,7 @@ process.GlobalTag.globaltag = 'FT53_V21A_AN6::All'
 #FileService for histograms
 process.TFileService = cms.Service("TFileService",
     fileName=cms.string(
-    'GRIN_2013_HODIGI_BeniCalib.root'
+    'SingleMu_Run2012A_22Jan2013_v1_RECO_HODIGI3.root'
     #'GRIN_analysis.root'
     )
 )
@@ -35,19 +35,9 @@ process.source = cms.Source("PoolSource",
     fileNames=cms.untracked.vstring(
                                     #'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_BeniMod_all.root',
                                     #'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/GRIN_RAW2DIGI_RECO.root'
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_11_1_0y4.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_12_2_k3w.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_15_1_Dz2.root',
                                     'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_16_1_wMo.root',
                                     'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_25_2_bD3.root',
                                     'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_28_1_eTO.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_33_1_d80.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_49_1_JRh.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_62_1_4Gn.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_64_2_9a2.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_65_1_unW.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_66_2_wfJ.root',
-                                    'file:/net/scratch_cms/institut_3b/erdogan/GRIN_RAW2DIGI_RECO/BeniCalib/GRIN_RAW2DIGI_RECO_68_1_ybY.root'
                                     #'file:/user/erdogan/samples/RAW_RECO/RunA/ZMU/reprocessed/SingleMu_Run2012A_ZMu22Jan2013_v1_RAW2DIGI_RECO_00644AB6.root',
                                     #'file:/user/erdogan/samples/RAW_RECO/RunA/ZMU/reprocessed/SingleMu_Run2012A_ZMu22Jan2013_v1_RAW2DIGI_RECO_04D268BB.root',
                                     #'file:/user/erdogan/samples/RAW_RECO/RunA/ZMU/reprocessed/SingleMu_Run2012A_ZMu22Jan2013_v1_RAW2DIGI_RECO_083E3CA8.root'

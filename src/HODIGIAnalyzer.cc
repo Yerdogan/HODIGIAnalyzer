@@ -110,7 +110,6 @@ private:
 	TrackAssociatorParameters assocParams;
 	TrackDetectorAssociator assoc;
 	MuonHOAcceptance* theMuonHOAcceptance;
-	const CaloGeometry *caloGeometry;
 
 };
 
@@ -119,6 +118,7 @@ private:
 //
 
 typedef edm::SortedCollection < HODataFrame > HODataFrameCollection;
+double twopi = 2.*3.14159265358979323846;
 
 //edm::InputTag beamspotLabel_;
 //edm::InputTag primvertexLabel_;
@@ -126,6 +126,21 @@ typedef edm::SortedCollection < HODataFrame > HODataFrameCollection;
 //
 // static data member definitions
 //
+
+static int const etaBounds = 3;
+static int const phiSectorsR0 = 7;
+static int const phiSectorsR12 = 2;
+
+static double const etaMin[etaBounds] = { -0.3017, 0.3425, 0.8796 };
+static double const etaMax[etaBounds] = { 0.3017, 0.8542, 1.2544 };
+
+//static double const phiMinR0[phiSectors] = { -0.16172, 0.3618786, 0.8854773, 1.409076116, 1.932674892, 2.456273667, 2.979872443, 3.503471219, 4.027069994, 4.55066877, 5.074267545, 5.597866321 };
+static double const phiMinR0[phiSectorsR0] = { -0.16172, 1.409076116, 1.932674892, 2.979872443, 3.503471219, 4.027069994, 5.597866321 };
+//static double const phiMaxR0[phiSectors] = { 0.317395374, 0.84099415, 1.364592925, 1.888191701, 2.411790477, 2.935389252, 3.458988028, 3.982586803, 4.506185579, 5.029784355, 5.55338313, 6.076981906 };
+static double const phiMaxR0[phiSectorsR0] = { 0.317395374, 1.888191701, 2.411790477, 3.458988028, 3.982586803, 4.506185579, 6.076981906 };
+
+static double const phiMinR12[phiSectorsR12] = { 0.88093347, 1.404532245 };
+static double const phiMaxR12[phiSectorsR12] = { 1.391186172, 1.914784947 };
 
 //
 // constructors and destructor
@@ -170,8 +185,8 @@ HODIGIAnalyzer::HODIGIAnalyzer(const edm::ParameterSet& iConfig) :
 	histos_["fourTS_fC_muonchannel_etaplus_grid"] = theFileService->make<TH1F> ("fourTS_fC_muonchannel_etaplus_grid", "fourTS_fC_muonchannel_etaplus_grid", 1000, 0., 1000.);
 	histos_["fourTS_fC_onechannel_muonchannel_grid"] = theFileService->make<TH1F> ("fourTS_fC_onechannel_muonchannel_grid", "fourTS_fC_onechannel_muonchannel_grid", 1000, 0., 1000.);
 
-	histos_["index_vs_nomfc_onechannel"] = theFileService->make<TH1F> ("index_vs_nomfc_onechannel", "index_vs_nomfc_onechannel", 10, 0., 10.);
-	histos_["index_vs_nomfc_muonchannel"] = theFileService->make<TH1F> ("index_vs_nomfc_muonchannel", "index_vs_nomfc_muonchannel", 10, 0., 10.);
+	histos_["index_vs_nomfc_onechannel"] = theFileService->make<TH1F> ("index_vs_nomfc_onechannel", "index_vs_nomfc_onechannel", 10, -0.5, 9.5);
+	histos_["index_vs_nomfc_muonchannel"] = theFileService->make<TH1F> ("index_vs_nomfc_muonchannel", "index_vs_nomfc_muonchannel", 10, -0.5, 9.5);
 
 	histos_["index_vs_fourfc"] = theFileService->make<TH2F> ("index_vs_fourfc", "index_vs_fourfc", 10, 0., 10., 500, 0., 500.);
 
@@ -231,11 +246,6 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	//uint32_t temp_onechannel_muonID = 1174479121; //for GRIN analysis ieta 2, iphi 17
 			// 1174479116; //for GRIN analysis ieta 2, iphi 12
 
-	ESHandle < CaloGeometry > caloGeom;
-	iSetup.get<CaloGeometryRecord> ().get(caloGeom);
-
-	caloGeometry = caloGeom.product();
-
 	Handle <HODataFrameCollection> hodigis;
 	iEvent.getByLabel("hcalDigis", hodigis);
 
@@ -264,7 +274,8 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 			
 			//plot the nominal fC
 			for (int ii = 0; ii < (*it1).size(); ++ii) {
-				histos_["index_vs_nomfc_onechannel"]->SetBinContent(ii,(*it1)[ii].nominal_fC());
+				histos_["index_vs_nomfc_onechannel"]->SetBinContent(ii+1,(*it1)[ii].nominal_fC());
+
 				tenTSfc_onechannel += (*it1)[ii].nominal_fC();
 				if (tempfc_onechannel < (*it1)[ii].nominal_fC()){
 					tempindex_onechannel = ii;
@@ -287,7 +298,7 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 	
 	//if (muons->size() > 0) { // do this if at least one muon there
 	//	for (unsigned int i = 0; i < muons->size(); ++i) { //loop over all muons
-	if (cosmic_muons->size() == 1) { // do this if exactly one cosmic muon there
+	if (cosmic_muons->size() >= 1) { // do this if exactly one cosmic muon there
 		for (unsigned int i = 0; i < cosmic_muons->size(); ++i) { //loop over all muons
 
 	//		reco::Muon const * muon_iter = &(muons->at(i));
@@ -313,287 +324,232 @@ void HODIGIAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 			if (!theMuonHOAcceptance->inNotDeadGeom(hoeta, hophi, 0., 0.)) continue;
 			// muons in SiPM tiles of HO
 			//if (!theMuonHOAcceptance->inSiPMGeom(hoeta2, hophi2, 0.04, 0.017)) inSiPM = 0;
-*/
+			 */
 			histos_["n_crossedHOIds"]->Fill(muMatch->crossedHOIds.size());
 
 			//int cosmu_HOieta = -999;
 			//int cosmu_HOiphi = -999;
 
-			/*
-			//alternative matching
-			if (cosmic_muons->at(i).innerOk() && cosmic_muons->at(i).outerOk()){
-
-				math::XYZPoint cosmu_innerpoint = cosmic_muons->at(i).innerPosition();
-				math::XYZPoint cosmu_outerpoint = cosmic_muons->at(i).outerPosition();
-
-				// inner = entrance, outer = exit
-				double cosmu_innerx = cosmu_innerpoint.x();
-				double cosmu_innery = cosmu_innerpoint.y();
-				double cosmu_innerz = cosmu_innerpoint.z();
-
-				double cosmu_outerx = cosmu_outerpoint.x();
-				double cosmu_outery = cosmu_outerpoint.y();
-				double cosmu_outerz = cosmu_outerpoint.z();
-
-				graphs_["muon_track_yz"]->SetPoint(0,cosmu_innerz,cosmu_innery);
-				graphs_["muon_track_yz"]->SetPoint(1,cosmu_outerz,cosmu_outery);
-
-				graphs_["muon_track_yz"]->Fit("pol1","q");
-
-				graphs_["muon_track_xy"]->SetPoint(0,cosmu_innerx,cosmu_innery);
-				graphs_["muon_track_xy"]->SetPoint(1,cosmu_outerx,cosmu_outery);
-
-				graphs_["muon_track_xy"]->Fit("pol1","q");
-
-				TF1 *fit_fuyz = new TF1();
-				fit_fuyz = graphs_["muon_track_yz"]->GetFunction("pol1");
-
-				TF1 *fit_fuxy = new TF1();
-				fit_fuxy = graphs_["muon_track_xy"]->GetFunction("pol1");
-
-				double HO_y = -99.;
-
-				if(cosmic_muons->at(i).momentum().y() < 0.){
-					HO_y = 407.;
-				} else HO_y = -407.;
-
-				double HO_z = fit_fuyz->GetX(HO_y,-800.,800.,1.E-10,100,false);
-				double HO_x = fit_fuxy->GetX(HO_y,-800.,800.,1.E-10,100,false);
-
-				GlobalPoint cosmu_HOpoint_yz(0.,HO_y,HO_z);
-				GlobalPoint cosmu_HOpoint_xy(HO_x,HO_y,0.);
-
-				//eta plane
-				cosmu_HOieta = int(cosmu_HOpoint_yz.eta()/0.087) + ((cosmu_HOpoint_yz.eta()>0) ? 1 : -1);
-
-				//phi plane
-				cosmu_HOiphi = int(cosmu_HOpoint_xy.phi()/0.087);
-			}
-*/
-
 			// if muon didn't cross any HO tile go on with the next muon
 			if (muMatch->crossedHOIds.size() == 0) continue;
 
-			// ----------------------------------------------------------------
-/*
-			//consider only muons without hits in CSC
-			int total = 0;
-			bool foundcsc = 0;
-			int nAll = muon_iter->numberOfChambers();
+			double hophi = muMatch->trkGlobPosAtHO.Phi();
+			double hoeta = muMatch->trkGlobPosAtHO.Eta();
 
-			for (int iC = 0; iC < nAll && foundcsc == 0; ++iC) {
-				if (muon_iter->matches()[iC].detector() == MuonSubdetId::CSC) {
-					foundcsc = 1;
-					break;
-				}
-				if (muon_iter->matches()[iC].detector() == MuonSubdetId::DT)
-					total++;
-			}
+			for (int ieta = 0; ieta<etaBounds; ++ieta) {
+				if ( (hoeta > etaMin[ieta]) && (hoeta < etaMax[ieta]) ) {
+					int const phiSectors = ((ieta == 1) ? phiSectorsR0 : phiSectorsR12);
+					for (int iphi = 0; iphi<phiSectors; ++iphi) {
+						double const * mins = ((ieta == 1) ? phiMinR0 : phiMinR12);
+						double const * maxes = ((ieta == 1) ? phiMaxR0 : phiMaxR12);
+						while (hophi < mins[0]) hophi += twopi;
+						while (hophi > mins[0]+twopi) hophi -= twopi;
+						if ((hophi > mins[iphi]) && (hophi < maxes[iphi])) {
+							int tile_ieta = -99.;
 
-			if (foundcsc || total == 0) continue;
+							double fourTSfC_muonchannel = 0.;
+							double temp_fourTSfC_muonchannel = 0.;
+							int tempindex_muonchannel;
+							int index_muonchannel = -99.;
 
-			// ------------------------------------------------------------------
-*/
+							double fourTSfC_muonchannel_grid = 0.;
+							double fourTSfC_muonchannel_grid1 = 0.;
+							double temp_fourTSfC_muonchannel_grid = 0.;
 
-			int tile_ieta = -99.;
+							double temp_fourTSfC_muonchannel_exgrid = 0.;
 
-			double fourTSfC_muonchannel = 0.;
-			double temp_fourTSfC_muonchannel = 0.;
-			int tempindex_muonchannel;
-			int index_muonchannel = -99.;
+							HODataFrameCollection::const_iterator it2;
 
-			double fourTSfC_muonchannel_grid = 0.;
-			double fourTSfC_muonchannel_grid1 = 0.;
-			double temp_fourTSfC_muonchannel_grid = 0.;
+							for (std::vector<DetId>::const_iterator aid = muMatch->crossedHOIds.begin(); aid != muMatch->crossedHOIds.end(); ++aid) {// loop over all HOIds crossed by the muon
+								HcalDetId mId(aid->rawId());
 
-			double temp_fourTSfC_muonchannel_exgrid = 0.;
+								for (it2 = hodigis->begin(); it2 != hodigis->end(); ++it2) {
+									HcalDetId cell(it2->id());
 
-			HODataFrameCollection::const_iterator it2;
+									if (cell.rawId() == mId.rawId()){ // do something when the crossedId is the same as the Id of the current digi
 
-			for (std::vector<DetId>::const_iterator aid = muMatch->crossedHOIds.begin(); aid != muMatch->crossedHOIds.end(); ++aid) {// loop over all HOIds crossed by the muon
-				HcalDetId mId(aid->rawId());
+										histos_["theID"]->Fill(mId.rawId());
 
-				for (it2 = hodigis->begin(); it2 != hodigis->end(); ++it2) {
-					HcalDetId cell(it2->id());
+										/*
+										double angle_for_corr = 0.;
+										double theta = 30.;
+										const math::XYZVector& cosmic_mom = cosmic_muons->at(i).momentum();
+										//const math::XYZVector& cosmic_mom = muon_iter->momentum();
+										math::XYZVector normal_vec;
 
-					if (cell.rawId() == mId.rawId()){ // do something when the crossedId is the same as the Id of the current digi
+										if(mId.iphi() >= 1 && mId.iphi() <= 6){
+											normal_vec.SetXYZ(sin(10*theta),cos(10*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 7 && mId.iphi() <= 12){
+											normal_vec.SetXYZ(sin(11*theta),cos(11*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 13 && mId.iphi() <= 18){
+											normal_vec.SetXYZ(0.,1.,0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 19 && mId.iphi() <= 24){
+											normal_vec.SetXYZ(sin(theta),cos(theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 25 && mId.iphi() <= 30){
+											normal_vec.SetXYZ(sin(2*theta),cos(2*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 31 && mId.iphi() <= 36){
+											normal_vec.SetXYZ(sin(3*theta),cos(3*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 37 && mId.iphi() <= 42){
+											normal_vec.SetXYZ(sin(4*theta),cos(4*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 43 && mId.iphi() <= 48){
+											normal_vec.SetXYZ(sin(5*theta),cos(5*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 49 && mId.iphi() <= 54){
+											normal_vec.SetXYZ(sin(6*theta),cos(6*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 55 && mId.iphi() <= 60){
+											normal_vec.SetXYZ(sin(7*theta),cos(7*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 61 && mId.iphi() <= 66){
+											normal_vec.SetXYZ(sin(8*theta),cos(8*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										} else if(mId.iphi() >= 67 && mId.iphi() <= 72){
+											normal_vec.SetXYZ(sin(9*theta),cos(9*theta),0.);
+											angle_for_corr = angle(normal_vec,cosmic_mom);
+											if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
+										}
 
-						histos_["theID"]->Fill(mId.rawId());
+										histos_["angle"]->Fill(angle_for_corr);
+										 */
+										double tempfc_muonchannel = 0.;
+										tempindex_muonchannel = 0;
 
-						/*
-						double angle_for_corr = 0.;
-						double theta = 30.;
-						const math::XYZVector& cosmic_mom = cosmic_muons->at(i).momentum();
-						//const math::XYZVector& cosmic_mom = muon_iter->momentum();
-						math::XYZVector normal_vec;
+										double tempfc_muonchannel_grid = 0.;
+										int tempindex_muonchannel_grid = 0;
 
-						if(mId.iphi() >= 1 && mId.iphi() <= 6){
-							normal_vec.SetXYZ(sin(10*theta),cos(10*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 7 && mId.iphi() <= 12){
-							normal_vec.SetXYZ(sin(11*theta),cos(11*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 13 && mId.iphi() <= 18){
-							normal_vec.SetXYZ(0.,1.,0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 19 && mId.iphi() <= 24){
-							normal_vec.SetXYZ(sin(theta),cos(theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 25 && mId.iphi() <= 30){
-							normal_vec.SetXYZ(sin(2*theta),cos(2*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 31 && mId.iphi() <= 36){
-							normal_vec.SetXYZ(sin(3*theta),cos(3*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 37 && mId.iphi() <= 42){
-							normal_vec.SetXYZ(sin(4*theta),cos(4*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 43 && mId.iphi() <= 48){
-							normal_vec.SetXYZ(sin(5*theta),cos(5*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 49 && mId.iphi() <= 54){
-							normal_vec.SetXYZ(sin(6*theta),cos(6*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 55 && mId.iphi() <= 60){
-							normal_vec.SetXYZ(sin(7*theta),cos(7*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 61 && mId.iphi() <= 66){
-							normal_vec.SetXYZ(sin(8*theta),cos(8*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						} else if(mId.iphi() >= 67 && mId.iphi() <= 72){
-							normal_vec.SetXYZ(sin(9*theta),cos(9*theta),0.);
-							angle_for_corr = angle(normal_vec,cosmic_mom);
-							if(angle_for_corr > 1.570795) angle_for_corr -= 1.570795;
-						}
+										double tempfc_muonchannel_exgrid = 0.;
+										int tempindex_muonchannel_exgrid = 0;
 
-						histos_["angle"]->Fill(angle_for_corr);
-*/
-						double tempfc_muonchannel = 0.;
-						tempindex_muonchannel = 0;
+										int gridSize = 1;
+										int n_gridtiles = 2;
 
-						double tempfc_muonchannel_grid = 0.;
-						int tempindex_muonchannel_grid = 0;
+										//plot the nominal fC
+										for (int ii = 0; ii < (*it2).size(); ++ii) {
+											histos_["index_vs_nomfc_muonchannel"]->SetBinContent(ii+1,(*it2)[ii].nominal_fC());
+											if (tempfc_muonchannel < (*it2)[ii].nominal_fC()){
+												tempindex_muonchannel = ii;
+												tempfc_muonchannel = (*it2)[ii].nominal_fC();
+											}
+										}
 
-						double tempfc_muonchannel_exgrid = 0.;
-						int tempindex_muonchannel_exgrid = 0;
+										// integrate over 4 timeslices
+										if(tempindex_muonchannel > 0 && tempindex_muonchannel <= 7){
+											temp_fourTSfC_muonchannel = (*it2)[tempindex_muonchannel-1].nominal_fC()+(*it2)[tempindex_muonchannel].nominal_fC()+
+												(*it2)[tempindex_muonchannel+1].nominal_fC()+(*it2)[tempindex_muonchannel+2].nominal_fC();
+										} else temp_fourTSfC_muonchannel = (*it2)[3].nominal_fC()+(*it2)[4].nominal_fC()+(*it2)[5].nominal_fC()+(*it2)[6].nominal_fC();
 
-						int gridSize = 1;
-						int n_gridtiles = 2;
+										if (temp_fourTSfC_muonchannel > fourTSfC_muonchannel) {
+											tile_ieta = mId.ieta();
+											fourTSfC_muonchannel = temp_fourTSfC_muonchannel;
+											index_muonchannel = tempindex_muonchannel;
+										}
 
-						//plot the nominal fC
-						for (int ii = 0; ii < (*it2).size(); ++ii) {
-							histos_["index_vs_nomfc_muonchannel"]->SetBinContent(ii,(*it2)[ii].nominal_fC());
-							if (tempfc_muonchannel < (*it2)[ii].nominal_fC()){
-								tempindex_muonchannel = ii;
-								tempfc_muonchannel = (*it2)[ii].nominal_fC();
-							}
-						}
+										//NxN (N=gridSize) neighborhood of the tile where the muon is expected to go through
+										HODataFrameCollection::const_iterator it3;
 
-						// integrate over 4 timeslices
-						if(tempindex_muonchannel > 0 && tempindex_muonchannel <= 7){
-							temp_fourTSfC_muonchannel = (*it2)[tempindex_muonchannel-1].nominal_fC()+(*it2)[tempindex_muonchannel].nominal_fC()+
-								(*it2)[tempindex_muonchannel+1].nominal_fC()+(*it2)[tempindex_muonchannel+2].nominal_fC();
-						} else temp_fourTSfC_muonchannel = (*it2)[3].nominal_fC()+(*it2)[4].nominal_fC()+(*it2)[5].nominal_fC()+(*it2)[6].nominal_fC();
+										for (it3 = hodigis->begin(); it3 != hodigis->end(); ++it3) {
+											HcalDetId neighborId(it3->id());
+											int dEta = abs( (mId.ieta()<0?mId.ieta()+1:mId.ieta() )
+															-(neighborId.ieta()<0?neighborId.ieta()+1:neighborId.ieta() ) ) ;
+											int dPhi = abs( mId.iphi()-neighborId.iphi() );
+											if (abs(72-dPhi) < dPhi) dPhi = 72-dPhi;
 
-						if (temp_fourTSfC_muonchannel > fourTSfC_muonchannel) {
-							tile_ieta = mId.ieta();
-							fourTSfC_muonchannel = temp_fourTSfC_muonchannel;
-							index_muonchannel = tempindex_muonchannel;
-						}
+											if(dEta <= gridSize && dPhi <= gridSize) {//within the grid
+												n_gridtiles++;
+												for (int iii = 0; iii < (*it3).size(); ++iii) {
+													if (tempfc_muonchannel_grid < (*it3)[iii].nominal_fC()){
+														tempindex_muonchannel_grid = iii;
+														tempfc_muonchannel_grid = (*it3)[iii].nominal_fC();
+													}
+												}
 
-						//NxN (N=gridSize) neighborhood of the tile where the muon is expected to go through
-						HODataFrameCollection::const_iterator it3;
+												// integrate over 4 timeslices
+												if(tempindex_muonchannel_grid > 0 && tempindex_muonchannel_grid <= 7){
+													temp_fourTSfC_muonchannel_grid = (*it3)[tempindex_muonchannel_grid-1].nominal_fC()+(*it3)[tempindex_muonchannel_grid].nominal_fC()+
+														(*it3)[tempindex_muonchannel_grid+1].nominal_fC()+(*it3)[tempindex_muonchannel_grid+2].nominal_fC();
+												} else temp_fourTSfC_muonchannel_grid = (*it3)[3].nominal_fC()+(*it3)[4].nominal_fC()+(*it3)[5].nominal_fC()+(*it3)[6].nominal_fC();
 
-						for (it3 = hodigis->begin(); it3 != hodigis->end(); ++it3) {
-							HcalDetId neighborId(it3->id());
-							int dEta = abs( (mId.ieta()<0?mId.ieta()+1:mId.ieta() )
-											-(neighborId.ieta()<0?neighborId.ieta()+1:neighborId.ieta() ) ) ;
-							int dPhi = abs( mId.iphi()-neighborId.iphi() );
-							if (abs(72-dPhi) < dPhi) dPhi = 72-dPhi;
+												if (temp_fourTSfC_muonchannel_grid > fourTSfC_muonchannel_grid) fourTSfC_muonchannel_grid = temp_fourTSfC_muonchannel_grid;
 
-							if(dEta <= gridSize && dPhi <= gridSize) {//within the grid
-								n_gridtiles++;
-								for (int iii = 0; iii < (*it3).size(); ++iii) {
-									if (tempfc_muonchannel_grid < (*it3)[iii].nominal_fC()){
-										tempindex_muonchannel_grid = iii;
-										tempfc_muonchannel_grid = (*it3)[iii].nominal_fC();
+											} else {//outside the grid
+												for (int iiii = 0; iiii < (*it3).size(); ++iiii) {
+													if (tempfc_muonchannel_exgrid < (*it3)[iiii].nominal_fC()){
+														tempindex_muonchannel_exgrid = iiii;
+														tempfc_muonchannel_exgrid = (*it3)[iiii].nominal_fC();
+													}
+												}
+
+												// integrate over 4 timeslices
+												if(tempindex_muonchannel_exgrid > 0 && tempindex_muonchannel_exgrid <= 7){
+													temp_fourTSfC_muonchannel_exgrid = (*it3)[tempindex_muonchannel_exgrid-1].nominal_fC()+(*it3)[tempindex_muonchannel_exgrid].nominal_fC()+
+														(*it3)[tempindex_muonchannel_exgrid+1].nominal_fC()+(*it3)[tempindex_muonchannel_exgrid+2].nominal_fC();
+												} else temp_fourTSfC_muonchannel_exgrid = (*it3)[3].nominal_fC()+(*it3)[4].nominal_fC()+(*it3)[5].nominal_fC()+(*it3)[6].nominal_fC();
+
+												histos_["fourTSfC_muonchannel_exgrid"]->Fill(temp_fourTSfC_muonchannel_exgrid);
+											}
+										}
+
+										if (fourTSfC_muonchannel_grid > fourTSfC_muonchannel_grid1) {
+											tile_ieta = mId.ieta();
+											fourTSfC_muonchannel_grid1 = fourTSfC_muonchannel_grid;
+										}
 									}
 								}
-
-								// integrate over 4 timeslices
-								if(tempindex_muonchannel_grid > 0 && tempindex_muonchannel_grid <= 7){
-									temp_fourTSfC_muonchannel_grid = (*it3)[tempindex_muonchannel_grid-1].nominal_fC()+(*it3)[tempindex_muonchannel_grid].nominal_fC()+
-										(*it3)[tempindex_muonchannel_grid+1].nominal_fC()+(*it3)[tempindex_muonchannel_grid+2].nominal_fC();
-								} else temp_fourTSfC_muonchannel_grid = (*it3)[3].nominal_fC()+(*it3)[4].nominal_fC()+(*it3)[5].nominal_fC()+(*it3)[6].nominal_fC();
-
-								if (temp_fourTSfC_muonchannel_grid > fourTSfC_muonchannel_grid) fourTSfC_muonchannel_grid = temp_fourTSfC_muonchannel_grid;
-
-							} else {//outside the grid
-								for (int iiii = 0; iiii < (*it3).size(); ++iiii) {
-									if (tempfc_muonchannel_exgrid < (*it3)[iiii].nominal_fC()){
-										tempindex_muonchannel_exgrid = iiii;
-										tempfc_muonchannel_exgrid = (*it3)[iiii].nominal_fC();
-									}
-								}
-
-								// integrate over 4 timeslices
-								if(tempindex_muonchannel_exgrid > 0 && tempindex_muonchannel_exgrid <= 7){
-									temp_fourTSfC_muonchannel_exgrid = (*it3)[tempindex_muonchannel_exgrid-1].nominal_fC()+(*it3)[tempindex_muonchannel_exgrid].nominal_fC()+
-										(*it3)[tempindex_muonchannel_exgrid+1].nominal_fC()+(*it3)[tempindex_muonchannel_exgrid+2].nominal_fC();
-								} else temp_fourTSfC_muonchannel_exgrid = (*it3)[3].nominal_fC()+(*it3)[4].nominal_fC()+(*it3)[5].nominal_fC()+(*it3)[6].nominal_fC();
-
-								histos_["fourTSfC_muonchannel_exgrid"]->Fill(temp_fourTSfC_muonchannel_exgrid);
 							}
-						}
 
-						if (fourTSfC_muonchannel_grid > fourTSfC_muonchannel_grid1) {
-							tile_ieta = mId.ieta();
-							fourTSfC_muonchannel_grid1 = fourTSfC_muonchannel_grid;
+							if (tile_ieta < -4){
+								histos_["fourTS_fC_muonchannel_etaminus"]->Fill(fourTSfC_muonchannel);
+							} else {
+								histos_["index_vs_fourfc"]->Fill(index_muonchannel,fourTSfC_muonchannel);
+								histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel);
+							}
+
+							if (tile_ieta == 10 || tile_ieta == 11){
+								histos_["fourTS_fC_onechannel_muonchannel"]->Fill(fourTSfC_muonchannel);
+							}
+
+
+							// plot negative wheels seperately
+							if (tile_ieta < -4){
+								histos_["fourTS_fC_muonchannel_etaminus_grid"]->Fill(fourTSfC_muonchannel_grid1);
+							} else {
+								histos_["fourTS_fC_muonchannel_etaplus_grid"]->Fill(fourTSfC_muonchannel_grid1);
+
+								if(fourTSfC_muonchannel_grid1 >= 60.){
+									histos_["fourTS_fC_muonchannel_60to1000"]->Fill(fourTSfC_muonchannel-36.);
+								}
+							}
+
+							if (tile_ieta == 10 || tile_ieta == 11){
+								histos_["fourTS_fC_onechannel_muonchannel_grid"]->Fill(fourTSfC_muonchannel_grid1);
+							}
+
+							//histos_["tempindex_muonchannel"]->Fill(tempindex_muonchannel);
+							//histos_["peak_fC_muonchannel"]->Fill(tempfc_muonchannel);
+
+							delete muMatch;
 						}
 					}
 				}
 			}
-
-			if (tile_ieta < -4){
-				histos_["fourTS_fC_muonchannel_etaminus"]->Fill(fourTSfC_muonchannel);
-			} else {
-				histos_["index_vs_fourfc"]->Fill(index_muonchannel,fourTSfC_muonchannel);
-				histos_["fourTS_fC_muonchannel_etaplus"]->Fill(fourTSfC_muonchannel);
-			}
-
-			if (tile_ieta == 10 || tile_ieta == 11){
-				histos_["fourTS_fC_onechannel_muonchannel"]->Fill(fourTSfC_muonchannel);
-			}
-
-
-			// plot negative wheels seperately
-			if (tile_ieta < -4){
-				histos_["fourTS_fC_muonchannel_etaminus_grid"]->Fill(fourTSfC_muonchannel_grid1);
-			} else {
-				histos_["fourTS_fC_muonchannel_etaplus_grid"]->Fill(fourTSfC_muonchannel_grid1);
-
-				if(fourTSfC_muonchannel_grid1 >= 60.){
-					histos_["fourTS_fC_muonchannel_60to1000"]->Fill(fourTSfC_muonchannel-36.);
-				}
-			}
-
-			if (tile_ieta == 10 || tile_ieta == 11){
-				histos_["fourTS_fC_onechannel_muonchannel_grid"]->Fill(fourTSfC_muonchannel_grid1);
-			}
-
-			//histos_["tempindex_muonchannel"]->Fill(tempindex_muonchannel);
-			//histos_["peak_fC_muonchannel"]->Fill(tempfc_muonchannel);
 		}
 	}
 

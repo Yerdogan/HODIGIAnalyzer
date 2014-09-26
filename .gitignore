@@ -4,4 +4,5 @@
 .gitignore
 .project
 .settings
+.pydevproject
 python/__init__.py
